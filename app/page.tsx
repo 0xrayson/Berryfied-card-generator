@@ -282,11 +282,12 @@ export default function ProfileCardGenerator() {
           ctx.drawImage(img, profileX - profileRadius, profileY - profileRadius, imageSize, imageSize)
 
           // Add username text to align with "berryfied" in the background
-         const usernameText = `@${username.trim()}
-          ctx.fillStyle = "#1f2937"
-          ctx.font = "bold 16px Arial, sans-serif"
-          ctx.textBaseline = "middle"
-          ctx.fillText(usernameText, 180, 406)
+         // Add username text to align with "berryfied" in the background
+        const usernameText = `@${username.trim()}`  // ← THIS LINE CHANGED
+        ctx.fillStyle = "#1f2937"
+        ctx.font = "bold 16px Arial, sans-serif"
+        ctx.textBaseline = "middle"
+        ctx.fillText(usernameText, 180, 406)
 
           setFinalCard(canvas.toDataURL("image/png", 0.9))
         }
