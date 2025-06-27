@@ -286,7 +286,7 @@ export default function ProfileCardGenerator() {
           ctx.fillStyle = "#1f2937"
           ctx.font = "bold 16px Arial, sans-serif"
           ctx.textBaseline = "middle"
-          ctx.fillText(usernameText, 180, 408)
+          ctx.fillText(usernameText, 180, 406)
 
           setFinalCard(canvas.toDataURL("image/png", 0.9))
         }
