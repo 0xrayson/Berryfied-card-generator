@@ -283,7 +283,7 @@ export default function ProfileCardGenerator() {
 
           // Add username text to align with "berryfied" in the background
          // Add username text to align with "berryfied" in the background
-        const usernameText = `@${username.trim()}`  // ← THIS LINE CHANGED
+        const usernameText = `@${username.trim()}` 
         ctx.fillStyle = "#1f2937"
         ctx.font = "bold 16px Arial, sans-serif"
         ctx.textBaseline = "middle"
@@ -489,6 +489,7 @@ export default function ProfileCardGenerator() {
         )}
 
         {/* Credits Footer */}
+        {/* by 0xrayson */}
         <div className="text-center mt-8 text-xs text-gray-500">
           Built by @0xrayson, designed and inspired by @Lxdy_rxd
         </div>
@@ -499,3 +500,5 @@ export default function ProfileCardGenerator() {
     </div>
   )
 }
+
+
