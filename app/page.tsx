@@ -402,7 +402,7 @@ export default function ProfileCardGenerator() {
                       Removing Background...
                     </>
                   ) : (
-                    "Remove Background (API + Free Fallback)"
+                    "Remove Background"
                   )}
                 </Button>
               )}
@@ -489,7 +489,7 @@ export default function ProfileCardGenerator() {
 
         {/* Credits Footer */}
         <div className="text-center mt-8 text-xs text-gray-500">
-          created by @0xrayson, designed and inspired by @Lxdy_rxd
+          Built by @0xrayson, designed and inspired by @Lxdy_rxd
         </div>
 
         {/* Hidden canvas for image generation */}
