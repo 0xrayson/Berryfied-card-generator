@@ -78,62 +78,117 @@ export default function ProfileCardGenerator() {
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
         const data = imageData.data
 
-        // More sophisticated background removal algorithm
+        // Enhanced background removal algorithm
+        const width = canvas.width
+        const height = canvas.height
+
+        // Step 1: Detect dominant background color (usually corners)
+        const corners = [
+          [0, 0],
+          [width - 1, 0],
+          [0, height - 1],
+          [width - 1, height - 1],
+          [Math.floor(width / 2), 0],
+          [0, Math.floor(height / 2)],
+          [width - 1, Math.floor(height / 2)],
+          [Math.floor(width / 2), height - 1],
+        ]
+
+        let bgR = 0,
+          bgG = 0,
+          bgB = 0,
+          cornerCount = 0
+        corners.forEach(([x, y]) => {
+          const idx = (y * width + x) * 4
+          bgR += data[idx]
+          bgG += data[idx + 1]
+          bgB += data[idx + 2]
+          cornerCount++
+        })
+        bgR = Math.floor(bgR / cornerCount)
+        bgG = Math.floor(bgG / cornerCount)
+        bgB = Math.floor(bgB / cornerCount)
+
+        console.log(`Detected background color: RGB(${bgR}, ${bgG}, ${bgB})`)
+
+        // Step 2: Remove background with multiple techniques
         for (let i = 0; i < data.length; i += 4) {
           const r = data[i]
           const g = data[i + 1]
           const b = data[i + 2]
 
+          // Calculate color difference from detected background
+          const colorDiff = Math.sqrt(Math.pow(r - bgR, 2) + Math.pow(g - bgG, 2) + Math.pow(b - bgB, 2))
+
           // Calculate luminance
           const luminance = 0.299 * r + 0.587 * g + 0.114 * b
 
-          // Remove white/light backgrounds
-          if (luminance > 200 && Math.abs(r - g) < 30 && Math.abs(g - b) < 30) {
+          let shouldRemove = false
+
+          // Technique 1: Similar to detected background color
+          if (colorDiff < 50) {
+            shouldRemove = true
+          }
+          // Technique 2: Very bright pixels (white backgrounds)
+          else if (r > 240 && g > 240 && b > 240) {
+            shouldRemove = true
+          }
+          // Technique 3: Very dark pixels (black backgrounds)
+          else if (r < 15 && g < 15 && b < 15) {
+            shouldRemove = true
+          }
+          // Technique 4: Uniform light colors
+          else if (luminance > 200 && Math.abs(r - g) < 30 && Math.abs(g - b) < 30) {
+            shouldRemove = true
+          }
+          // Technique 5: Green screen detection
+          else if (g > r + 50 && g > b + 50 && g > 100) {
+            shouldRemove = true
+          }
+
+          if (shouldRemove) {
             data[i + 3] = 0 // Make transparent
           }
-          // Remove very bright pixels
-          else if (r > 240 && g > 240 && b > 240) {
-            data[i + 3] = 0
-          }
-          // Edge detection for better subject isolation
-          else if (luminance > 180) {
-            // Check surrounding pixels for edge detection
-            const pixelIndex = Math.floor(i / 4)
-            const x = pixelIndex % canvas.width
-            const y = Math.floor(pixelIndex / canvas.width)
+        }
 
-            // Simple edge detection - if surrounded by similar colors, likely background
-            let similarCount = 0
-            for (let dx = -1; dx <= 1; dx++) {
+        // Step 3: Edge cleanup - remove isolated pixels
+        const newData = new Uint8ClampedArray(data)
+        for (let y = 1; y < height - 1; y++) {
+          for (let x = 1; x < width - 1; x++) {
+            const idx = (y * width + x) * 4
+
+            if (data[idx + 3] > 0) {
+              // If pixel is visible
+              let transparentNeighbors = 0
+
+              // Check 8 surrounding pixels
               for (let dy = -1; dy <= 1; dy++) {
-                const nx = x + dx
-                const ny = y + dy
-                if (nx >= 0 && nx < canvas.width && ny >= 0 && ny < canvas.height) {
-                  const neighborIndex = (ny * canvas.width + nx) * 4
-                  const nr = data[neighborIndex]
-                  const ng = data[neighborIndex + 1]
-                  const nb = data[neighborIndex + 2]
-
-                  if (Math.abs(r - nr) < 40 && Math.abs(g - ng) < 40 && Math.abs(b - nb) < 40) {
-                    similarCount++
-                  }
+                for (let dx = -1; dx <= 1; dx++) {
+                  if (dx === 0 && dy === 0) continue
+                  const nIdx = ((y + dy) * width + (x + dx)) * 4
+                  if (data[nIdx + 3] === 0) transparentNeighbors++
                 }
               }
-            }
 
-            // If most neighbors are similar and bright, likely background
-            if (similarCount > 6) {
-              data[i + 3] = Math.max(0, data[i + 3] - 100) // Reduce opacity
+              // If surrounded by mostly transparent pixels, make it transparent
+              if (transparentNeighbors >= 6) {
+                newData[idx + 3] = 0
+              }
             }
           }
         }
 
-        ctx.putImageData(imageData, 0, 0)
+        ctx.putImageData(new ImageData(newData, width, height), 0, 0)
         setProcessedImage(canvas.toDataURL("image/png"))
+        console.log("✅ Free background removal completed")
         resolve()
       }
 
-      img.onerror = () => reject(new Error("Failed to load image"))
+      img.onerror = () => {
+        console.error("Failed to load image for processing")
+        reject(new Error("Failed to load image"))
+      }
+
       img.src = uploadedImage
     })
   }, [uploadedImage])
@@ -166,8 +221,8 @@ export default function ProfileCardGenerator() {
         await advancedBackgroundRemoval()
         console.log("✅ Background removed using free fallback method")
       } catch (fallbackError) {
-        console.error("Both methods failed:", fallbackError)
-        setError("Failed to remove background. Please try a different image with a clearer subject.")
+        console.error("Free fallback also failed:", fallbackError)
+        setError("Background removal failed. Try an image with a clear subject on a solid background.")
       }
     } finally {
       setIsProcessing(false)
